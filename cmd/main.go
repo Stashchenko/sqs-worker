@@ -46,7 +46,7 @@ func main() {
 func stopGracefully(cancel context.CancelFunc) {
 	// Wait for a signal to quit:
 	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt, os.Kill, syscall.SIGTERM)
+	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
 	<-signalChan
 	fmt.Println("Stopping sqs workers gracefully...")
 	cancel()

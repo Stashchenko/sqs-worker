@@ -50,7 +50,6 @@ func TestStart(t *testing.T) {
 	queue := newJobMessageQueue(config, mockSQSClient)
 
 	ctx, cancel := contextAndCancel()
-	defer cancel()
 
 	t.Run("the queue has correct configuration", func(t *testing.T) {
 		assert.Equal(t, queue.config.QueueURL, queueURL, "QueueURL has been set properly")
@@ -71,13 +70,16 @@ func TestStart(t *testing.T) {
 
 	t.Run("Should put a job to the job queue", func(t1 *testing.T) {
 		go queue.listen(ctx)
+		defer cancel()
+
 		clientParams := buildClientParams()
 		deleteInput := &sqs.DeleteMessageInput{QueueUrl: clientParams.QueueUrl}
 
 		t1.Run("the queue successfully sends a message", func(t *testing.T) {
 			mockSQSClient.On("ReceiveMessage", clientParams).Return()
 
-			jobQ := <-queue.GetJobs()
+			jobQ, ok := <-queue.GetJobs()
+			assert.Equal(t, ok, true)
 			assert.IsType(t, jobQ, &job{})
 			assert.IsType(t, jobQ.Message, sqsMessage)
 
@@ -88,7 +90,8 @@ func TestStart(t *testing.T) {
 			mockSQSClient.On("ReceiveMessage", clientParams).Return()
 			mockSQSClient.On("DeleteMessage", deleteInput).Return()
 
-			jobQ := <-queue.GetJobs()
+			jobQ, ok := <-queue.GetJobs()
+			assert.Equal(t, ok, true)
 			err := queue.DeleteMessage(jobQ.Message.ReceiptHandle)
 
 			assert.NoError(t, err)

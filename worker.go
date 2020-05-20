@@ -114,7 +114,7 @@ func (w *Worker) processJob(job *job, h Handler) error {
 	}
 	w.log.Debug(fmt.Sprintf("worker %d: deleted message from queue: %s", w.id, aws.StringValue(job.Message.MessageId)))
 
-	job.Duration = time.Now().Sub(job.StartedAt)
+	job.Duration = time.Since(job.StartedAt)
 	w.log.Debug(fmt.Sprintf("worker %d: processed job in: %s", w.id, job.Duration))
 	return nil
 }

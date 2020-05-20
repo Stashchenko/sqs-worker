@@ -1,4 +1,9 @@
 # sqs-worker
+
+![Test&Build](https://github.com/Stashchenko/sqs-worker/workflows/test%20and%20build/badge.svg)
+[![Coverage Status](https://coveralls.io/repos/github/Stashchenko/sqs-worker/badge.svg?branch=master)](https://coveralls.io/github/Stashchenko/sqs-worker?branch=master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Stashchenko/sqs-worker)](https://goreportcard.com/report/github.com/Stashchenko/sqs-worker)
+
 GoLang SQS Queue Worker using the AWS SDK:
 
 `go get github.com/Stashchenko/sqs-worker`
