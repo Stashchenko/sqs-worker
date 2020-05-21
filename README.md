@@ -6,6 +6,10 @@
 
 GoLang SQS Queue Worker using the AWS SDK:
 
+![pr screenshot](.github/diagram.png) 
+
+Install:
+
 `go get github.com/Stashchenko/sqs-worker`
 
 Worker service which reads from a SQS queue pulls off job messages and processes them concurrently.
