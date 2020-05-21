@@ -66,7 +66,7 @@ func stopGracefully(cancel context.CancelFunc) {
 }
 ```
 
-### Run SQS Servce (localstack) from DockerHub:
+### Run SQS Service (localstack) from DockerHub:
 ```sh
  docker run --rm -p 4576:4576 -e SERVICES:sqs -d --name sqs localstack/localstack
 ```

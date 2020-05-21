@@ -2,6 +2,7 @@ package sqsworker
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -34,6 +35,11 @@ const waitTimeSecond = 11
 const visibilityTimeoutSecond = 19
 const queueURL = "https://sqs.eu-west-1.amazonaws.com/1234567890/sqs-queue.fifo"
 
+func TestMain(m *testing.M) {
+	code := m.Run()
+	os.Exit(code)
+}
+
 func TestStart(t *testing.T) {
 
 	config := &Config{
@@ -41,15 +47,24 @@ func TestStart(t *testing.T) {
 		WaitTimeSecond:     waitTimeSecond,
 		VisibilityTimeout:  visibilityTimeoutSecond,
 		QueueURL:           queueURL,
+		WorkerSize:         1,
 	}
 
 	sqsMessage := &sqs.Message{Body: aws.String(`{ "test": "message", "data": "hello" }`)}
 	sqsResponse := sqs.ReceiveMessageOutput{Messages: []*sqs.Message{sqsMessage}}
 	mockSQSClient := &mockedSqsClient{Response: sqsResponse}
-
 	queue := newJobMessageQueue(config, mockSQSClient)
 
 	ctx, cancel := contextAndCancel()
+
+	clientParams := buildClientParams()
+	deleteInput := &sqs.DeleteMessageInput{QueueUrl: clientParams.QueueUrl}
+
+	mockSQSClient.On("ReceiveMessage", clientParams).Return()
+	mockSQSClient.On("DeleteMessage", deleteInput).Return()
+
+	go queue.listen(ctx)
+	defer cancel()
 
 	t.Run("the queue has correct configuration", func(t *testing.T) {
 		assert.Equal(t, queue.config.QueueURL, queueURL, "QueueURL has been set properly")
@@ -69,11 +84,6 @@ func TestStart(t *testing.T) {
 	})
 
 	t.Run("Should put a job to the job queue", func(t1 *testing.T) {
-		go queue.listen(ctx)
-		defer cancel()
-
-		clientParams := buildClientParams()
-		deleteInput := &sqs.DeleteMessageInput{QueueUrl: clientParams.QueueUrl}
 
 		t1.Run("the queue successfully sends a message", func(t *testing.T) {
 			mockSQSClient.On("ReceiveMessage", clientParams).Return()
@@ -82,8 +92,7 @@ func TestStart(t *testing.T) {
 			assert.Equal(t, ok, true)
 			assert.IsType(t, jobQ, &job{})
 			assert.IsType(t, jobQ.Message, sqsMessage)
-
-			mockSQSClient.AssertExpectations(t)
+			assert.Equal(t, jobQ.Message.Body, sqsMessage.Body)
 		})
 
 		t1.Run("the queue successfully delete a message", func(t *testing.T) {
@@ -92,10 +101,9 @@ func TestStart(t *testing.T) {
 
 			jobQ, ok := <-queue.GetJobs()
 			assert.Equal(t, ok, true)
-			err := queue.DeleteMessage(jobQ.Message.ReceiptHandle)
 
+			err := queue.DeleteMessage(jobQ.Message.ReceiptHandle)
 			assert.NoError(t, err)
-			mockSQSClient.AssertExpectations(t)
 		})
 	})
 
